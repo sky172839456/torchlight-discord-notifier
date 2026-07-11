@@ -1,0 +1,64 @@
+name: Torchlight Discord Notifier
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+concurrency:
+  group: torchlight-discord-notifier
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Run notifier
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          TEST_WEBHOOK_URL: ${{ secrets.TEST_WEBHOOK_URL }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python bot.py --test
+          else
+            python bot.py
+          fi
+
+      - name: Save notification state
+        if: github.event_name == 'schedule'
+        run: |
+          if [ -z "$(git status --porcelain -- sent_ids.json)" ]; then
+            echo "No state changes"
+            exit 0
+          fi
+
+          cp sent_ids.json /tmp/sent_ids.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          cp /tmp/sent_ids.json sent_ids.json
+          git add sent_ids.json
+          git commit -m "Update sent notification records"
+          git push origin HEAD:main
+
