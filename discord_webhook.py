@@ -12,25 +12,19 @@ def build_payload(article):
     return {
         "embeds": [{
             "title": "🔥 火炬之光：無限",
-            "url": article["url"],
             "color": color,
             "description": (
                 "━━━━━━━━━━━━━━━━━━━━━━\n\n"
                 f"# 📌 {article['title']}\n\n"
                 f"📅 **日期**\n{article.get('date', '-')}\n\n"
                 f"🏷️ **類別**\n{category}\n\n"
+                f"🔗 **公告連結：** <{article['url']}>\n"
+                f"🌐 **官方網站：** <{OFFICIAL_SITE_URL}>\n"
+                f"📘 **官方 FB：** <{OFFICIAL_FACEBOOK_URL}>\n\n"
                 "━━━━━━━━━━━━━━━━━━━━━━"
             ),
             "footer": {"text": "🔥 火炬情報雷達"},
             "timestamp": datetime.now(timezone.utc).isoformat()
-        }],
-        "components": [{
-            "type": 1,
-            "components": [
-                {"type": 2, "style": 5, "label": "📖 公告連結", "url": article["url"]},
-                {"type": 2, "style": 5, "label": "🌐 官方網站", "url": OFFICIAL_SITE_URL},
-                {"type": 2, "style": 5, "label": "📘 官方 Facebook", "url": OFFICIAL_FACEBOOK_URL}
-            ]
         }]
     }
 
@@ -38,7 +32,6 @@ def build_payload(article):
 def send_article(webhook_url, article):
     response = requests.post(
         webhook_url,
-        params={"with_components": "true"},
         json=build_payload(article),
         timeout=20
     )
