@@ -36,6 +36,10 @@ def build_payload(article):
 
 
 def send_article(webhook_url, article):
-    response = requests.post(webhook_url, json=build_payload(article), timeout=20)
+    response = requests.post(
+        webhook_url,
+        params={"with_components": "true"},
+        json=build_payload(article),
+        timeout=20
+    )
     response.raise_for_status()
-
