@@ -2,6 +2,13 @@ name: Torchlight Discord Notifier
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Notification mode"
+        type: choice
+        options: [test, formal]
+        default: test
+        required: true
   schedule:
     - cron: "*/30 * * * *"
 
@@ -38,14 +45,14 @@ jobs:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
           TEST_WEBHOOK_URL: ${{ secrets.TEST_WEBHOOK_URL }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.mode }}" != "formal" ]; then
             python bot.py --test
           else
             python bot.py
           fi
 
       - name: Save notification state
-        if: github.event_name == 'schedule'
+        if: github.event_name == 'schedule' || inputs.mode == 'formal'
         run: |
           if [ -z "$(git status --porcelain -- sent_ids.json)" ]; then
             echo "No state changes"
